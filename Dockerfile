@@ -2,6 +2,13 @@ FROM registry.anvil.rcac.purdue.edu/jupyterhub/anvil-slurm:latest
 
 USER root
 
+# Apptainer
+RUN apt -y update && \
+    apt -y install software-properties-common && \
+    add-apt-repository -y ppa:apptainer/ppa && \
+    apt -y update && \
+    apt install -y apptainer
+
 # HTCondor
 RUN wget -qO - https://research.cs.wisc.edu/htcondor/repo/keys/HTCondor-24.x-Key | tee /etc/apt/trusted.gpg.d/htcondor.asc && \
     echo "deb https://research.cs.wisc.edu/htcondor/repo/ubuntu/24.x jammy main" >/etc/apt/sources.list.d/htcondor.list && \

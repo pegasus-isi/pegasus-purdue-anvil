@@ -1,10 +1,11 @@
-FROM registry.anvil.rcac.purdue.edu/jupyterhub/anvil-slurm:latest
+FROM registry.anvil.rcac.purdue.edu/jupyterhub/anvil-notebook:latest
 
 USER root
 
 # Apptainer
 RUN apt -y update && \
-    apt -y install software-properties-common && \
+    apt -y upgrade && \
+    apt -y install bash build-essential curl software-properties-common && \
     add-apt-repository -y ppa:apptainer/ppa && \
     apt -y update && \
     apt install -y apptainer
@@ -13,7 +14,7 @@ RUN apt -y update && \
 RUN wget -qO - https://research.cs.wisc.edu/htcondor/repo/keys/HTCondor-24.x-Key | tee /etc/apt/trusted.gpg.d/htcondor.asc && \
     echo "deb https://research.cs.wisc.edu/htcondor/repo/ubuntu/24.x jammy main" >/etc/apt/sources.list.d/htcondor.list && \
     apt -y update && \
-    apt -y install htcondor
+    apt -y install condor
 
 # Configure HTCondor
 RUN echo "DAEMON_LIST = MASTER, SHARED_PORT, COLLECTOR, NEGOTIATOR, SCHEDD" >/etc/condor/config.d/10-main.conf
@@ -24,7 +25,7 @@ RUN echo -e "#\!/bin/bash\ncondor_master" >/usr/local/bin/before-notebook.d/ZZZ-
 
 # Pegasus
 RUN wget -qO - https://download.pegasus.isi.edu/pegasus/gpg.txt | tee /etc/apt/trusted.gpg.d/pegasus.asc && \
-    echo "deb [trusted=yes] https://download.pegasus.isi.edu/pegasus/development/5.1/ubuntu jammy main" >/etc/apt/sources.list.d/pegasus.list && \
+    echo "deb [trusted=yes] https://download.pegasus.isi.edu/pegasus/ubuntu jammy main" >/etc/apt/sources.list.d/pegasus.list && \
     apt -y update && \
     apt -y install pegasus && \
     pegasus-configure-glite

@@ -1,33 +1,26 @@
-FROM registry.anvil.rcac.purdue.edu/jupyterhub/anvil-notebook:latest
+FROM registry.anvil.rcac.purdue.edu/jupyterhub/anvil-notebook-rocky8.10:latest
 
 USER root
 
 # Apptainer
-RUN apt -y update && \
-    apt -y upgrade && \
-    apt -y install bash build-essential curl software-properties-common && \
-    add-apt-repository -y ppa:apptainer/ppa && \
-    apt -y update && \
-    apt install -y apptainer
+RUN dnf install -y apptainer
 
 # HTCondor
-RUN wget -qO - https://research.cs.wisc.edu/htcondor/repo/keys/HTCondor-24.x-Key | tee /etc/apt/trusted.gpg.d/htcondor.asc && \
-    echo "deb https://research.cs.wisc.edu/htcondor/repo/ubuntu/24.x jammy main" >/etc/apt/sources.list.d/htcondor.list && \
-    apt -y update && \
-    apt -y install condor
+RUN dnf install -y https://htcss-downloads.chtc.wisc.edu/repo/25.x/htcondor-release-current.el8.noarch.rpm && \
+    dnf install -y condor
 
 # Configure HTCondor
 RUN echo "DAEMON_LIST = MASTER, SHARED_PORT, COLLECTOR, NEGOTIATOR, SCHEDD" >/etc/condor/config.d/10-main.conf
 
 # Start HTCondor automatically
-RUN echo -e "#\!/bin/bash\ncondor_master" >/usr/local/bin/before-notebook.d/ZZZ-htcondor.sh && \
-    chmod 755 /usr/local/bin/before-notebook.d/ZZZ-htcondor.sh
+#RUN echo -e "#\!/bin/bash\nenv >/tmp/foo.txt 2>&1\ncondor_master || true" >/usr/local/bin/before-notebook.d/ZZZ-htcondor.sh && \
+#    chmod 755 /usr/local/bin/before-notebook.d/ZZZ-htcondor.sh
+COPY ZZZ-htcondor.sh /usr/local/bin/before-notebook.d/ZZZ-htcondor.sh
+RUN chmod 755 /usr/local/bin/before-notebook.d/ZZZ-htcondor.sh
 
 # Pegasus
-RUN wget -qO - https://download.pegasus.isi.edu/pegasus/gpg.txt | tee /etc/apt/trusted.gpg.d/pegasus.asc && \
-    echo "deb [trusted=yes] https://download.pegasus.isi.edu/pegasus/ubuntu jammy main" >/etc/apt/sources.list.d/pegasus.list && \
-    apt -y update && \
-    apt -y install pegasus && \
+RUN wget -O /etc/yum.repos.d/pegasus.repo https://download.pegasus.isi.edu/wms/download/rhel/8/pegasus.repo && \
+    dnf install -y pegasus && \
     pegasus-configure-glite
 
 USER jovyan
